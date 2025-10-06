@@ -13,6 +13,6 @@ CREATE TABLE IF NOT EXISTS todos(
     id integer primary key,
     title text not null check(length(title) > 0),
     is_done integer not null default 0 check(is_done in(0, 1)),
-    created_at text not null default(datetime('now')),
-    updated_at text not null default(datetime('now'))
+    created_at text not null default(datetime('now','localtime')),
+    updated_at text not null default(datetime('now', 'localtime'))
 );

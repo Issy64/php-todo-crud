@@ -4,16 +4,18 @@ declare(strict_types=1);
 
 /*
 ----------------------------------------
-ブートストラップ
-  （目的）
   ・セッション開始（フラッシュメッセージ等で後々使う）
   ・依存ファイルを読み込み、PDOを初期化
+  ・タイトルの上限を設定
 ----------------------------------------
 */
 session_start();
 
-require_once(__DIR__ . '/../app/db.php');//getPDO() を定義しているファイル
+require_once __DIR__ . '/../app/db.php';//getPDO() を定義しているファイル
+require_once __DIR__ . '/../app/csrf.php';
 $pdo = getPDO();
+
+const TITLE_MAX = 120;
 
 /*
 ----------------------------------------
@@ -32,6 +34,15 @@ try {
     case 'list':
       handle_list($pdo);
       break;
+
+    case 'create':
+      if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        header('Location: /?action=list', true, 303);
+        break;
+      }
+      handle_create($pdo);
+      break;
+
     default:
       http_response_code(404);
       echo 'Not Found';
@@ -69,6 +80,59 @@ SQL;
 
 /*
 ----------------------------------------
+アクション関数: create
+  （目的）
+  ・POSTされた文字列をインサートする
+  ・CSRFトークン検証→文字列受取→インサート
+  ・インサート時にプリペアドステートメントを利用し、安全にSQLクエリに落とし込む
+----------------------------------------
+*/
+function handle_create(PDO $pdo): void
+{
+  $token = $_POST['csrf_token'] ?? '';
+  if (!verifyToken($token)) {
+    http_response_code(400);
+    echo 'Bad Request (CSRF token invalid)';
+    return;
+  }
+
+  $title = trim((string) ($_POST['title'] ?? ''));
+
+  if ($title === '' || mb_strlen($title, 'UTF-8') > TITLE_MAX) {
+    $_SESSION['flash']['error'] = 'Title is required and up to' . TITLE_MAX . 'chars';
+    header('Location: /?action=list', true, 303);
+    return;
+  }
+
+  $sql = <<<SQL
+INSERT INTO todos(title)
+VALUES(:title)
+SQL;
+  $stmt = $pdo->prepare($sql);
+  $stmt->execute([':title' => $title]);
+
+  $_SESSION['flash']['success'] = 'Todo created!';
+  header('Location: /?action=list', true, 303);
+}
+
+/*
+----------------------------------------
+flashヘルパ
+  （目的）
+  ・flashとして表示させたい機能をヘルパ化
+----------------------------------------
+*/
+function flash(string $key): ?string
+{
+  if (!isset($_SESSION['flash'][$key]))
+    return null;
+  $msg = $_SESSION['flash'][$key];
+  unset($_SESSION['flash'][$key]);
+  return $msg;
+}
+
+/*
+----------------------------------------
 レンダラ
   （目的）
   ・表示時のXSS対策(htmlspecialchars)を集中させる
@@ -78,7 +142,8 @@ SQL;
 function render_list_view(array $todos): void
 {
   $h = fn($s) => htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8');
-
+  $success = flash('success');
+  $error = flash('error');
   ?>
 
   <!-- ここからHTML記述 -->
@@ -93,12 +158,14 @@ function render_list_view(array $todos): void
   </head>
 
   <body>
+    <?php if ($success): ?>
+      <p class="flash success" aria-live="polite"><?php echo $h($success); ?></p>
+    <?php endif; ?>
+    <?php if ($error): ?>
+      <p class="flash error" aria-live="assertive"><?php echo $h($error); ?></p>
+    <?php endif; ?>
+
     <h1>ToDo一覧</h1>
-
-    <p class="muted">
-      これは「R(read)」の最小実装です。GETアクセスでDBを読み出して表示しています。
-    </p>
-
     <table>
       <thead>
         <tr>
@@ -131,6 +198,17 @@ function render_list_view(array $todos): void
         <?php endif; ?>
       </tbody>
     </table>
+
+    <hr>
+
+    <form method="post" action="/?action=create">
+      <input type="hidden" name="csrf_token" value="<?php echo $h(generateToken()); ?>">
+      <label for="title">New Todo</label>
+      <input id="title" name="title" type="text" required maxlength="<?php echo TITLE_MAX; ?>" inputmode="text"
+        autocomplete="off" aria-describedby="title-help">
+      <small id="title-help">1〜<?php echo TITLE_MAX; ?>文字。空白のみは不可。</small>
+      <button type="submit">Add</button>
+    </form>
   </body>
 
   </html>
