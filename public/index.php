@@ -28,6 +28,12 @@ const TITLE_MAX = 120;
 ----------------------------------------
 */
 $action = $_GET['action'] ?? 'list';
+function http_response_405(): void
+{
+  http_response_code(405);
+  header("Allow: POST");
+  echo 'Method Not Allowed';
+}
 
 try {
   switch ($action) {
@@ -37,10 +43,18 @@ try {
 
     case 'create':
       if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        header('Location: /?action=list', true, 303);
+        http_response_405();
         break;
       }
       handle_create($pdo);
+      break;
+
+    case 'update':
+      if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        http_response_405();
+        break;
+      }
+      handle_update($pdo);
       break;
 
     default:
@@ -115,6 +129,54 @@ SQL;
   header('Location: /?action=list', true, 303);
 }
 
+function handle_update(PDO $pdo): void
+{
+  // CSRF
+  $token = $_POST['csrf_token'] ?? '';
+  if (!verifyToken($token)) {
+    http_response_code(400);
+    echo 'Bad Request (CSRF token invalid)';
+    return;
+  }
+
+  // ID検証
+  $id = filter_input(INPUT_POST, 'id', FILTER_VALIDATE_INT);
+  if (!$id) {
+    $_SESSION['flash']['error'] = 'Invalid ID';
+    header('Location: /?action=list', true, 303);
+    exit;
+  }
+
+  // 存在確認
+  $stmt = $pdo->prepare('SELECT id FROM todos WHERE id = :id');
+  $stmt->execute([':id' => $id]);
+  if (!$stmt->fetch()) {
+    $_SESSION['flash']['error'] = 'Todo not found';
+    header('Location: /?action=list', true, 303);
+    exit;
+  }
+
+  // トグル更新（updated_atも更新）
+  $sql = <<<SQL
+UPDATE todos
+SET is_done = CASE WHEN is_done = 1 THEN 0 ELSE 1 END,
+updated_at = datetime('now','localtime')
+WHERE id = :id
+SQL;
+
+  $u = $pdo->prepare($sql);
+  $u->execute([':id' => $id]);
+
+  if ($u->rowCount() === 1) {
+    $_SESSION['flash']['success'] = 'Todo updated!';
+  } elseif($u->rowCount() === 0 ) {
+    $_SESSION['flash']['error'] = 'Update failed';
+  }
+
+  header('Location: /?action=list', true, 303);
+  exit;
+}
+
 /*
 ----------------------------------------
 flashヘルパ
@@ -166,6 +228,18 @@ function render_list_view(array $todos): void
     <?php endif; ?>
 
     <h1>ToDo一覧</h1>
+
+    <form method="post" action="/?action=create">
+      <input type="hidden" name="csrf_token" value="<?php echo $h(generateToken()); ?>">
+      <label for="title">New Todo</label>
+      <input id="title" name="title" type="text" required maxlength="<?php echo TITLE_MAX; ?>" inputmode="text"
+        autocomplete="off" aria-describedby="title-help">
+      <small id="title-help">1〜<?php echo TITLE_MAX; ?>文字。空白のみは不可。</small>
+      <button type="submit">Add</button>
+    </form>
+
+    <hr>
+
     <table>
       <thead>
         <tr>
@@ -174,6 +248,7 @@ function render_list_view(array $todos): void
           <th>Status</th>
           <th>Created</th>
           <th>Updated</th>
+          <th>Checked</th>
         </tr>
       </thead>
       <tbody>
@@ -188,63 +263,32 @@ function render_list_view(array $todos): void
             </td>
             <td class="muted"><?php echo $h($t['created_at']); ?></td>
             <td class="muted"><?php echo $h($t['updated_at']); ?></td>
+            <td>
+              <form method="post" action="/?action=update" style="display:inline">
+                <input type="hidden" name="csrf_token" value="<?= $h(generateToken()) ?>">
+                <input type="hidden" name="id" value="<?= $h($t['id']) ?>">
+                <button type="submit" class="btn">
+                  <?= ((int) $t['is_done'] === 1) ? 'ReOpen' : 'Mark as Done' ?>
+                </button>
+              </form>
+            </td>
           </tr>
         <?php endforeach; ?>
 
         <?php if (count($todos) == 0): ?>
           <tr>
-            <td colspan="5">データがありません</td>
+            <td colspan="6">データがありません</td>
           </tr>
         <?php endif; ?>
       </tbody>
     </table>
 
-    <hr>
 
-    <form method="post" action="/?action=create">
-      <input type="hidden" name="csrf_token" value="<?php echo $h(generateToken()); ?>">
-      <label for="title">New Todo</label>
-      <input id="title" name="title" type="text" required maxlength="<?php echo TITLE_MAX; ?>" inputmode="text"
-        autocomplete="off" aria-describedby="title-help">
-      <small id="title-help">1〜<?php echo TITLE_MAX; ?>文字。空白のみは不可。</small>
-      <button type="submit">Add</button>
-    </form>
+
+
   </body>
 
   </html>
 
   <?php
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-// // 許可するリスト
-// $allowed = ['list','create','store','edit','update','destroy'];
-
-// // $_GETが存在、かつnullではない→そのまま、違うなら'list'
-// $action = $_GET['action'] ?? 'list';
-// $action = trim($action);
-// if ($action === '' || !in_array($action, $allowed, true)) {
-//   $action = 'list'; // または 404 的なハンドリング
-// }
-
-// switch ($action) {
-//   case 'list':    /* TODO: SELECT全件 → views/list.php */ break;
-//   case 'create':  /* TODO: 空データで views/form.php    */ break;
-//   case 'store':   /* TODO: CSRF/validate→INSERT→PRG      */ break;
-//   case 'edit':    /* TODO: idを検証→1件取得→form表示     */ break;
-//   case 'update':  /* TODO: CSRF/validate→UPDATE→PRG       */ break;
-//   case 'destroy': /* TODO: CSRF/存在確認→DELETE→PRG       */ break;
-//   default:        /* TODO: flash.error→list               */ break;
-// }
-
