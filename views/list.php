@@ -1,9 +1,6 @@
 <?php
 declare(strict_types=1);
-require_once __DIR__ . '/../app//actions/list.php';
-require_once __DIR__ . '/../app//actions/create.php';
-require_once __DIR__ . '/../app//actions/update.php';
-require_once __DIR__ . '/../app//actions/delete.php';
+require_once __DIR__ . '/../app/csrf.php';
 /*
 ----------------------------------------
 レンダラ
@@ -45,7 +42,7 @@ function render_list_view(array $todos): void
             <input type="hidden" name="csrf_token" value="<?php echo $h(generateToken()); ?>">
             <label for="title">New Todo</label>
             <input id="title" name="title" type="text" required maxlength="<?php echo TITLE_MAX; ?>" inputmode="text"
-                autocomplete="off" aria-describedby="title-help">
+                autocomplete="off" aria-describedby="title-help" value="<?php stickyInput() ?>">
             <small id="title-help">1〜<?php echo TITLE_MAX; ?>文字。空白のみは不可。</small>
             <button type="submit">Add</button>
         </form>

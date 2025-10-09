@@ -12,7 +12,7 @@ declare(strict_types=1);
 session_start();
 
 require_once __DIR__ . '/../app/db.php';//getPDO() を定義しているファイル
-require_once __DIR__ . '/../app/csrf.php';
+require_once __DIR__ . '/../app/helper.php';
 require_once __DIR__ . '/../app//actions/list.php';
 require_once __DIR__ . '/../app//actions/create.php';
 require_once __DIR__ . '/../app//actions/update.php';
@@ -81,28 +81,4 @@ try {
   // 開発用（必要ならコメントアウト）
   echo '<pre>' . htmlspecialchars($e->getMessage(), ENT_QUOTES, 'UTF-8') . '</pre>';
   exit;
-}
-
-
-/*
-----------------------------------------
-flashヘルパ
-  （目的）
-  ・flashとして表示させたい機能をヘルパ化
-----------------------------------------
-*/
-function flash(string $key): ?string
-{
-  if (!isset($_SESSION['flash'][$key]))
-    return null;
-  $msg = $_SESSION['flash'][$key];
-  unset($_SESSION['flash'][$key]);
-  return $msg;
-}
-
-function http_response_405(): void
-{
-  http_response_code(405);
-  header("Allow: POST");
-  echo 'Method Not Allowed';
 }
