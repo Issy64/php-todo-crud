@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 require_once __DIR__ . '/../app/csrf.php';
 /*
@@ -15,7 +16,7 @@ function render_list_view(array $todos): void
     $h = fn($s) => htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8');
     $success = flash('success');
     $error = flash('error');
-    ?>
+?>
 
     <!-- ここからHTML記述 -->
     <!DOCTYPE html>
@@ -42,7 +43,7 @@ function render_list_view(array $todos): void
             <input type="hidden" name="csrf_token" value="<?php echo $h(generateToken()); ?>">
             <label for="title">New Todo</label>
             <input id="title" name="title" type="text" required maxlength="<?php echo TITLE_MAX; ?>" inputmode="text"
-                autocomplete="off" aria-describedby="title-help" value="<?php stickyInput() ?>">
+                autocomplete="off" aria-describedby="title-help" value="<?php echo getSticky() ?>">
             <small id="title-help">1〜<?php echo TITLE_MAX; ?>文字。空白のみは不可。</small>
             <button type="submit">Add</button>
         </form>
@@ -101,5 +102,5 @@ function render_list_view(array $todos): void
     </body>
 
     </html>
-    <?php
+<?php
 }

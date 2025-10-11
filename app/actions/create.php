@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 require_once __DIR__ . '/../../app/csrf.php';
 /*
@@ -34,6 +35,21 @@ SQL;
     $stmt = $pdo->prepare($sql);
     $stmt->execute([':title' => $title]);
 
-    $_SESSION['flash']['success'] = 'Todo created!';
+    // if ($stmt->rowCount() === 1) {
+    //     $_SESSION['flash']['success'] = 'Todo created!';
+    // } else {
+    //     $_SESSION['flash']['error'] = 'create failed';
+    //     setSticky($title);
+    // }
+
+    $check = 0;
+    if ($check === 1) {
+        $_SESSION['flash']['success'] = 'Todo created!';
+    } else {
+        $_SESSION['flash']['error'] = 'create failed';
+        // $_SESSION['flash']['error'] = $title;
+        setSticky($title);
+    }
+
     header('Location: /?action=list', true, 303);
 }

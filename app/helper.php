@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 function flash(string $key): ?string
@@ -17,13 +18,19 @@ function http_response_405(): void
   echo 'Method Not Allowed';
 }
 
-function stickyInput(): ?string
+function setSticky(string $title): void
 {
-  if(!isset($_SESSION['oldTitle'])){
+  // $_SESSION['flash']['error'] = 'checked';
+  // $_SESSION['flash']['error'] = $title;
+  $_SESSION['oldTitle'] = $title;
+}
+
+function getSticky(): ?string
+{
+  if (!isset($_SESSION['oldTitle'])) {
     return null;
   }
   $title = $_SESSION['oldTitle'];
   unset($_SESSION['oldTitle']);
   return $title;
-
 }

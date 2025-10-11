@@ -44,4 +44,3 @@ SQL;
 
     header('Location:/?action=list', true, 303);
 }
-
