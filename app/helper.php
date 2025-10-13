@@ -18,6 +18,13 @@ function http_response_405(): void
   echo 'Method Not Allowed';
 }
 
+function http_response_404(): void
+{
+  http_response_code(404);
+  header("Allow: POST");
+  echo 'Not Found';
+}
+
 function setSticky(string $title): void
 {
   // $_SESSION['flash']['error'] = 'checked';
@@ -33,4 +40,9 @@ function getSticky(): ?string
   $title = $_SESSION['oldTitle'];
   unset($_SESSION['oldTitle']);
   return $title;
+}
+
+function html_helper($s): string
+{
+  return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
 }

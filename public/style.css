@@ -41,3 +41,8 @@ td {
 #todo-none {
     text-align: center;
 }
+
+#title{
+    width: 15em;
+    overflow-x: auto;
+}

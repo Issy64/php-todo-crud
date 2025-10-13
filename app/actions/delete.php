@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-require_once __DIR__ . '/../../app/csrf.php';
+require_once __DIR__ . '/../csrf.php';
 /*
 ----------------------------------------
 アクション関数: delete

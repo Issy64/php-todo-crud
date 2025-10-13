@@ -42,7 +42,7 @@ Webアプリを作るにあたり、何がわからないのか分からない�
 セッションは index.php の最上部で開始。
 
 # 5) データモデル（SQLite）
-- テーブル：tasks(id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, created_at TEXT NOT NULL)
+- テーブル：todos(id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, created_at TEXT NOT NULL)
 - 制約：title 必須・最大100文字（アプリ側で検証）
 - シード：('Write README'), ('Implement update'), ('Add CSRF')
 

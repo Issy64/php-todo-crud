@@ -1,6 +1,6 @@
 <?PHP
 declare(strict_types=1);
-require_once __DIR__ ."/../../views/list.php";
+require_once __DIR__ ."/../../views/viewList.php";
 // ----------------------------------------
 // アクション関数: list
 // （目的）

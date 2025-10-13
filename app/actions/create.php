@@ -1,7 +1,7 @@
 <?php
 
 declare(strict_types=1);
-require_once __DIR__ . '/../../app/csrf.php';
+require_once __DIR__ . '/../csrf.php';
 /*
 ----------------------------------------
 アクション関数: create
@@ -32,24 +32,25 @@ function handle_create(PDO $pdo): void
 INSERT INTO todos(title)
 VALUES(:title)
 SQL;
+
     $stmt = $pdo->prepare($sql);
     $stmt->execute([':title' => $title]);
 
-    // if ($stmt->rowCount() === 1) {
-    //     $_SESSION['flash']['success'] = 'Todo created!';
-    // } else {
-    //     $_SESSION['flash']['error'] = 'create failed';
-    //     setSticky($title);
-    // }
-
-    $check = 0;
-    if ($check === 1) {
+    if ($stmt->rowCount() === 1) {
         $_SESSION['flash']['success'] = 'Todo created!';
     } else {
         $_SESSION['flash']['error'] = 'create failed';
-        // $_SESSION['flash']['error'] = $title;
         setSticky($title);
     }
+
+    // $check = 0;
+    // if ($check === 1) {
+    //     $_SESSION['flash']['success'] = 'Todo created!';
+    // } else {
+    //     $_SESSION['flash']['error'] = 'create failed';
+    //     // $_SESSION['flash']['error'] = $title;
+    //     setSticky($title);
+    // }
 
     header('Location: /?action=list', true, 303);
 }

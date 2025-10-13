@@ -11,12 +11,13 @@ declare(strict_types=1);
 */
 session_start();
 
-require_once __DIR__ . '/../app/db.php';//getPDO() を定義しているファイル
+require_once __DIR__ . '/../app/db.php'; //getPDO() を定義しているファイル
 require_once __DIR__ . '/../app/helper.php';
-require_once __DIR__ . '/../app//actions/list.php';
-require_once __DIR__ . '/../app//actions/create.php';
-require_once __DIR__ . '/../app//actions/update.php';
-require_once __DIR__ . '/../app//actions/delete.php';
+require_once __DIR__ . '/../app/actions/list.php';
+require_once __DIR__ . '/../app/actions/create.php';
+require_once __DIR__ . '/../app/actions/update.php';
+require_once __DIR__ . '/../app/actions/delete.php';
+require_once __DIR__ . '/../app/actions/confirm.php';
 $pdo = getPDO();
 
 const TITLE_MAX = 120;
@@ -33,11 +34,10 @@ const TITLE_MAX = 120;
 */
 $action = $_GET['action'] ?? 'list';
 $action = trim($action);
-$allowList = ['list', 'create', 'update', 'delete'];
+$allowList = ['list', 'create', 'update', 'delete', 'delete_confirm'];
 
 if ($action === '' || !in_array($action, $allowList)) {
-  http_response_code(404);
-  echo 'Not Found';
+  http_response_404();
   exit;
 }
 
@@ -71,9 +71,12 @@ try {
       handle_delete($pdo);
       break;
 
+    case 'delete_confirm':
+      handle_confirm($pdo);
+      break;
+
     default:
-      http_response_code(404);
-      echo 'Not Found';
+      http_response_404();
   }
 } catch (Throwable $e) {
   http_response_code(500);
